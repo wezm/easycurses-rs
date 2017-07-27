@@ -23,6 +23,8 @@
 
 extern crate pancurses;
 
+pub use pancurses::Input;
+
 use std::panic::*;
 
 /// The three options you can pass to `EasyCurses::set_cursor_visibility`. Note
