@@ -1,6 +1,7 @@
 
 #![warn(missing_docs)]
 #![allow(dead_code)]
+#![deny(missing_debug_implementations)]
 
 //! This is a crate that allows one to easily use a basic form of curses. It is
 //! based upon [pancurses](https://docs.rs/crate/pancurses/0.8.0) and so it's
@@ -29,6 +30,7 @@ use std::panic::*;
 
 /// The three options you can pass to `EasyCurses::set_cursor_visibility`. Note
 /// that not all terminals support all visibility modes.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum CursorVisibility {
     /// Makes the cursor invisible.
     Invisible,
@@ -49,7 +51,7 @@ pub enum CursorVisibility {
 ///
 /// Even if you _can_ change the color content of a color, you still access the
 /// eight colors with these names.
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Color {
     /// Black
     Black,
@@ -131,7 +133,7 @@ mod color_tests {
 }
 
 /// A color pair for a character cell on the screen.
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct ColorPair(i16);
 
 impl ColorPair {
@@ -207,6 +209,7 @@ pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
 /// happen even if your program panics and unwinds, but it **will not** happen
 /// if your program panics and aborts (obviously). So, don't abort the program
 /// while curses is active, or your terminal session will just be ruined.
+#[derive(Debug)]
 pub struct EasyCurses {
     /// This is the inner pancurses `Window` that easycurses wraps over. This is
     /// only intended to be used as a last resort if you really want to call
