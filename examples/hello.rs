@@ -1,4 +1,8 @@
 
+// Prevents a spare console from being created attatched to our program on
+// windows, but only if we're running in release mode.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 extern crate easycurses;
 
 use easycurses::*;
