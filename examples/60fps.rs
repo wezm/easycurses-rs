@@ -13,7 +13,7 @@ fn main() {
     easy.set_cursor_visibility(CursorVisibility::Invisible);
     easy.set_echo(false);
     easy.set_keypad_enabled(true);
-    easy.timeout(0);
+    easy.set_input_mode(InputMode::NonBlocking);
     easy.set_scrolling(true);
 
     let (_, col_count) = easy.get_row_col_count();

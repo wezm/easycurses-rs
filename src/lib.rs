@@ -29,16 +29,25 @@ pub use pancurses::Input;
 use std::panic::*;
 use std::iter::Iterator;
 
-/// The three options you can pass to `EasyCurses::set_cursor_visibility`. Note
-/// that not all terminals support all visibility modes.
+/// The three options you can pass to [`EasyCurses::set_cursor_visibility`].
+///
+/// Note that not all terminals support all visibility modes.
+///
+/// [`EasyCurses::set_cursor_visibility`]: struct.EasyCurses.html#method.set_cursor_visibility
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum CursorVisibility {
-    /// Makes the cursor invisible.
+    /// Makes the cursor invisible. Supported on most terminals.
     Invisible,
-    /// Makes the cursor visible in the normal way.
+    /// Makes the cursor visible in the normal way. The Default.
     Visible,
-    /// Makes the cursor "highly" visible in some way.
+    /// Makes the cursor "highly" visible in some way. Not supported on all terminals.
     HighlyVisible,
+}
+
+impl Default for CursorVisibility {
+    fn default() -> Self {
+        CursorVisibility::Visible
+    }
 }
 
 /// The curses color constants.
@@ -148,7 +157,8 @@ mod color_tests {
 pub struct ColorPair(i16);
 
 impl ColorPair {
-    fn new(fg: Color, bg: Color) -> Self {
+    /// Creates a new `ColorPair` given a foreground and background.
+    pub fn new(fg: Color, bg: Color) -> Self {
         let fgi = color_to_i16(fg);
         let bgi = color_to_i16(bg);
         ColorPair(fgbg_pairid(fgi, bgi))
@@ -159,7 +169,6 @@ impl Default for ColorPair {
     /// The "default" color pair is White text on a Black background.
     ///
     /// ```
-    /// extern crate easycurses;
     /// use easycurses::{Color,ColorPair};
     /// assert_eq!(ColorPair::default(), ColorPair::new(Color::White,Color::Black));
     /// ```
@@ -232,12 +241,22 @@ pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
 /// happen even if your program panics and unwinds, but it **will not** happen
 /// if your program panics and aborts (obviously). So, don't abort the program
 /// while curses is active, or your terminal session will just be ruined.
+///
+/// Except in the case of [`is_color_terminal`], all `EasyCurses` methods that
+/// return a `bool` use it to indicate if the requested operation was successful
+/// or not.
+///
+/// [`is_color_terminal`]: #method.is_color_terminal
 #[derive(Debug)]
 pub struct EasyCurses {
-    /// This is the inner pancurses `Window` that easycurses wraps over. This is
-    /// only intended to be used as a last resort if you really want to call
-    /// something that's not here. Under normal circumstances you shouldn't need
-    /// to touch this field at all.
+    /// This is the inner pancurses `Window` that the `EasyCurses` type wraps
+    /// over.
+    ///
+    /// This is only intended to be used as a last resort, if you really want to
+    /// call something that's not here. Under normal circumstances you shouldn't
+    /// need to touch this field at all. It's not "unsafe" to use in the
+    /// rust/memory sense, but if you access this field and then cause a bug in
+    /// `EasyCurses`, that's your fault.
     pub win: pancurses::Window,
     color_support: bool,
 }
@@ -268,9 +287,9 @@ impl EasyCurses {
     /// the program to print an error message to stdout and then immediately
     /// exit. C libs are silly like that. Your terminal _will_ be left in a
     /// usable state, but anything else in your program that's not abort-safe is
-    /// probably not full safe with this. It is expected that you deal with that
-    /// by calling this just once at the start of your program, before you've
-    /// started anything that's not abort-safe.
+    /// probably not fullly safe with this. It is expected that you deal with
+    /// that by calling this just once at the start of your program, before
+    /// you've started anything that's not abort-safe.
     pub fn initialize_system() -> Self {
         let w = pancurses::initscr();
         let color_support = if pancurses::has_colors() {
@@ -322,8 +341,7 @@ impl EasyCurses {
     /// available immediately, and erase/kill/backspace character processing is
     /// not performed. When this mode is off (nocbreak) user input is not
     /// available to the application until a newline has been typed. The default
-    /// mode is not specified (but happens to often be cbreak). The bool result
-    /// indicates if the operation was successful or not.
+    /// mode is not specified (but happens to often be cbreak).
     ///
     /// See also the [Input
     /// Mode](http://pubs.opengroup.org/onlinepubs/7908799/xcurses/intov.html#tag_001_005_002)
@@ -346,7 +364,7 @@ impl EasyCurses {
 
     /// Enables or disables the automatic echoing of input into the window as
     /// the user types. Default to on, but you probably want it to be off most
-    /// of the time. The result is if the requested change was successful.
+    /// of the time.
     pub fn set_echo(&mut self, echoing: bool) -> bool {
         to_bool(if echoing {
             pancurses::echo()
@@ -371,8 +389,7 @@ impl EasyCurses {
         }
     }
 
-    /// Enables or disables bold text for all future input. The bool is if the
-    /// operation was successful or not.
+    /// Enables or disables bold text for all future input.
     pub fn set_bold(&mut self, bold_on: bool) -> bool {
         to_bool(if bold_on {
             self.win.attron(pancurses::Attribute::Bold)
@@ -381,8 +398,7 @@ impl EasyCurses {
         })
     }
 
-    /// Enables or disables unerlined text for all future input. The bool is if
-    /// the operation was successful or not.
+    /// Enables or disables unerlined text for all future input.
     pub fn set_underline(&mut self, underline_on: bool) -> bool {
         to_bool(if underline_on {
             self.win.attron(pancurses::Attribute::Underline)
@@ -425,29 +441,25 @@ impl EasyCurses {
         to_bool(self.win.setscrreg(top, bottom))
     }
 
-    /// Prints the given string into the window. The bool indicates if the
-    /// operation was successful or not.
+    /// Prints the given string into the window.
     pub fn print(&mut self, string: &str) -> bool {
         to_bool(self.win.printw(string))
     }
 
-    /// Prints the given character into the window. The bool indicates if the
-    /// operation was successful or not.
+    /// Prints the given character into the window.
     pub fn print_char(&mut self, character: char) -> bool {
         to_bool(self.win.addch(character))
     }
 
     /// Deletes the character under the cursor. Characters after it on same the
     /// line are pulled left one position and the final character cell is left
-    /// blank. The cursor position does not move. Returns if the operation was
-    /// successful or not.
+    /// blank. The cursor position does not move.
     pub fn delete_char(&mut self) -> bool {
         to_bool(self.win.delch())
     }
 
     /// Deletes the line under the cursor. Lines below are moved up one line and
-    /// the final line is left blank. The cursor position does not move. Returns
-    /// if the operation was successful or not.
+    /// the final line is left blank. The cursor position does not move.
     pub fn delete_line(&mut self) -> bool {
         to_bool(self.win.deleteln())
     }
@@ -477,12 +489,19 @@ impl EasyCurses {
         pancurses::flash();
     }
 
-    /// This controls if `get_input` is blocking or not. Negative values cause
-    /// `get_input` to block indefinitely. Zero causes `get_input` to simply be
-    /// non-blocking. Positive values cause `get_input` to block for up to the
-    /// given number of miliseconds. The default mode is indefinite blocking.
-    pub fn timeout(&mut self, miliseconds: i32) {
-        self.win.timeout(miliseconds);
+    /// This controls if `get_input` is blocking or not. The default mode is `Blocking`.
+    ///
+    /// See also: The
+    /// [notimeout](http://pubs.opengroup.org/onlinepubs/7908799/xcurses/notimeout.html)
+    /// curses function.
+    pub fn set_input_mode(&mut self, mode: InputMode) {
+        use InputMode::*;
+        use std::cmp::max;
+        match mode {
+            Blocking => self.win.timeout(-1),
+            NonBlocking => self.win.timeout(0),
+            TimeLimit(time) => self.win.timeout(max(time, 1)),
+        };
     }
 
     /// Gets an `Input` from the curses input buffer. Depending on the `timeout` setting that y
@@ -497,8 +516,36 @@ impl EasyCurses {
     }
 
     /// Pushes an `Input` value into the input stack so that it will be returned
-    /// by the next call to `get_input`.
+    /// by the next call to `get_input`. The return value is if the operation
+    /// was successful.
     pub fn un_get_input(&mut self, input: &pancurses::Input) -> bool {
         to_bool(self.win.ungetch(input))
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+/// The input modes allowed.
+///
+/// Affects how [`EasyCurses::get_input`] works. Set a mode with
+/// [`EasyCurses::set_input_mode`].
+///
+/// [`EasyCurses::get_input`]: struct.EasyCurses.html#method.get_input
+///
+/// [`EasyCurses::set_input_mode`]: struct.EasyCurses.html#method.set_input_mode
+pub enum InputMode {
+    /// `get_input` will block indefinitely. This is the default.
+    Blocking,
+    /// `get_input` will return immediately. If no input is in the queue you get
+    /// a `None` value back.
+    NonBlocking,
+    /// `get_input` will wait up to the number of milliseconds specified before
+    /// returning `None`. If any value less than 1 is given, it uses 1 instead.
+    TimeLimit(i32),
+}
+
+impl Default for InputMode {
+    /// The default input mode is Blocking.
+    fn default() -> Self {
+        InputMode::Blocking
     }
 }

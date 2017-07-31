@@ -13,6 +13,8 @@ commented, and you can run any of them with `cargo` to see them in action.
 cargo run --example <fileName>
 ```
 
+## [Documentation](https://docs.rs/easycurses)
+
 ## Terminal Safety
 
 Normally when you're using curses there's a big danger that your program will
