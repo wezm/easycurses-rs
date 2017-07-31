@@ -12,7 +12,7 @@ fn main() {
     let mut easy = EasyCurses::initialize_system();
 
     // don't show the cursor
-    easy.set_cursor_visibility(CursorVisibility::HighlyVisible);
+    easy.set_cursor_visibility(CursorVisibility::Invisible);
 
     // don't echo the user's input
     easy.set_echo(false);
