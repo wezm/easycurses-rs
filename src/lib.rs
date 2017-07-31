@@ -298,11 +298,17 @@ impl EasyCurses {
             false
         };
         if color_support {
+            let color_count = pancurses::COLORS();
+            let pair_count = pancurses::COLOR_PAIRS();
             for fg in Color::color_iterator() {
                 for bg in Color::color_iterator() {
                     let fgi = color_to_i16(fg);
                     let bgi = color_to_i16(bg);
-                    pancurses::init_pair(fgbg_pairid(fgi, bgi), fgi, bgi);
+                    let pair_id = fgbg_pairid(fgi, bgi);
+                    assert!(fgi <= color_count as i16);
+                    assert!(bgi <= color_count as i16);
+                    assert!(pair_id <= pair_count as i16);
+                    pancurses::init_pair(pair_id, fgi, bgi);
                 }
             }
         }
