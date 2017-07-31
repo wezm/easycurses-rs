@@ -27,6 +27,7 @@ extern crate pancurses;
 pub use pancurses::Input;
 
 use std::panic::*;
+use std::iter::Iterator;
 
 /// The three options you can pass to `EasyCurses::set_cursor_visibility`. Note
 /// that not all terminals support all visibility modes.
@@ -42,33 +43,39 @@ pub enum CursorVisibility {
 
 /// The curses color constants.
 ///
-/// Curses supports eight colors, and each cell has one "color pair" set which
-/// is a foreground and background pairing. In some implementations you can
-/// change the RGB values associated with a color, and when you do that affects
-/// all cells in the screen using that color in either foreground or background.
-/// Note also that a cell can possibly be either bold/bright, normal, or dim, so
-/// you potentially have a few more colors to work with there too.
-///
-/// Even if you _can_ change the color content of a color, you still access the
-/// eight colors with these names.
+/// Curses supports eight different colors. Each character cell has one "color
+/// pair" set which is a foreground and background pairing. Note that a cell can
+/// also be "bold", which might display as differnet colors on some terminals.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Color {
-    /// Black
+    #[allow(missing_docs)]
     Black,
-    /// Red
+    #[allow(missing_docs)]
     Red,
-    /// Green
+    #[allow(missing_docs)]
     Green,
-    /// Yellow
+    #[allow(missing_docs)]
     Yellow,
-    /// Blue
+    #[allow(missing_docs)]
     Blue,
-    /// Magenta
+    #[allow(missing_docs)]
     Magenta,
-    /// Cyan
+    #[allow(missing_docs)]
     Cyan,
-    /// White
+    #[allow(missing_docs)]
     White,
+}
+
+type ColorIter = std::iter::Cloned<std::slice::Iter<'static, Color>>;
+
+impl Color {
+    /// Provides a handy Iterator over all of the Color values.
+    pub fn color_iterator() -> ColorIter {
+        use Color::*;
+        #[allow(non_upper_case_globals)]
+        static colors: &[Color] = &[Black, Red, Green, Yellow, Blue, Magenta, Cyan, White];
+        colors.iter().cloned()
+    }
 }
 
 /// Converts a `Color` to the `i16` associated with it.
@@ -133,29 +140,45 @@ mod color_tests {
 }
 
 /// A color pair for a character cell on the screen.
+///
+/// Use them with [`EasyCurses::set_color_pair`].
+///
+/// [`EasyCurses::set_color_pair`]: struct.EasyCurses.html#method.set_color_pair
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct ColorPair(i16);
 
 impl ColorPair {
-    /// Converts a foreground and background color into the ColorPair to use.
-    pub fn from(foreground: Color, background: Color) -> Self {
-        let fgi = color_to_i16(foreground);
-        let bgi = color_to_i16(background);
-        ColorPair(ColorPair::fgbg_pairid(fgi, bgi))
+    fn new(fg: Color, bg: Color) -> Self {
+        let fgi = color_to_i16(fg);
+        let bgi = color_to_i16(bg);
+        ColorPair(fgbg_pairid(fgi, bgi))
     }
+}
 
-    /// The "low level" conversion using i16 values. Color pair 0 is white on
-    /// black but we can't assign to it. Technically we're only assured to have
-    /// color pairs 0 through 63 available, but you usually get more so we're
-    /// taking a gamble that there's at least one additional bit available. The
-    /// alternative is a somewhat complicated conversion scheme where we special
-    /// case White/Black to be 0, then other things start ascending above that,
-    /// until we hit where White/Black should be and start subtracting one from
-    /// everything to keep it within spec. I don't wanna do that if I don't
-    /// really have to.
-    fn fgbg_pairid(fg: i16, bg: i16) -> i16 {
-        1 + (8 * fg + bg)
+impl Default for ColorPair {
+    /// The "default" color pair is White text on a Black background.
+    ///
+    /// ```
+    /// extern crate easycurses;
+    /// use easycurses::{Color,ColorPair};
+    /// assert_eq!(ColorPair::default(), ColorPair::new(Color::White,Color::Black));
+    /// ```
+    fn default() -> Self {
+        Self::new(Color::White, Color::Black)
     }
+}
+
+/// The "low level" conversion using i16 values. Color pair 0 is white on
+/// black but we can't assign to it. Technically we're only assured to have
+/// color pairs 0 through 63 available, but you usually get more so we're
+/// taking a gamble that there's at least one additional bit available. The
+/// alternative is a somewhat complicated conversion scheme where we special
+/// case White/Black to be 0, then other things start ascending above that,
+/// until we hit where White/Black should be and start subtracting one from
+/// everything to keep it within spec. I don't wanna do that if I don't
+/// really have to.
+fn fgbg_pairid(fg: i16, bg: i16) -> i16 {
+    1 + (8 * fg + bg)
 }
 
 /// Converts a `pancurses::OK` value into `true`, and all other values into
@@ -220,9 +243,9 @@ pub struct EasyCurses {
 }
 
 impl Drop for EasyCurses {
-    /// Dropping EasyCurses causes
+    /// Dropping EasyCurses causes the
     /// [endwin](http://pubs.opengroup.org/onlinepubs/7908799/xcurses/endwin.html)
-    /// to be called.
+    /// curses function to be called.
     fn drop(&mut self) {
         pancurses::endwin();
     }
@@ -231,15 +254,23 @@ impl Drop for EasyCurses {
 impl EasyCurses {
     /// Initializes the curses system so that you can begin using curses. This
     /// isn't called "new" because you shouldn't be making more than one
-    /// EasyCurses value at the same time ever. Note that since this uses
-    /// [initscr](http://pubs.opengroup.org/onlinepubs/7908799/xcurses/initscr.html),
-    /// any error during initialization will generally cause the program to
-    /// print an error message to stdout and then immediately exit. C libs are
-    /// silly like that.
+    /// EasyCurses value at the same time ever.
     ///
     /// If the terminal supports colors, they are automatcially activated and
     /// color pairs are initialized for all color foreground and background
     /// combinations.
+    ///
+    /// # Panics
+    ///
+    /// Since this uses the
+    /// [initscr](http://pubs.opengroup.org/onlinepubs/7908799/xcurses/initscr.html)
+    /// curses function, any error during initialization will generally cause
+    /// the program to print an error message to stdout and then immediately
+    /// exit. C libs are silly like that. Your terminal _will_ be left in a
+    /// usable state, but anything else in your program that's not abort-safe is
+    /// probably not full safe with this. It is expected that you deal with that
+    /// by calling this just once at the start of your program, before you've
+    /// started anything that's not abort-safe.
     pub fn initialize_system() -> Self {
         let w = pancurses::initscr();
         let color_support = if pancurses::has_colors() {
@@ -248,9 +279,11 @@ impl EasyCurses {
             false
         };
         if color_support {
-            for fg in 0..8 {
-                for bg in 0..8 {
-                    pancurses::init_pair(ColorPair::fgbg_pairid(fg, bg), fg, bg);
+            for fg in Color::color_iterator() {
+                for bg in Color::color_iterator() {
+                    let fgi = color_to_i16(fg);
+                    let bgi = color_to_i16(bg);
+                    pancurses::init_pair(fgbg_pairid(fgi, bgi), fgi, bgi);
                 }
             }
         }
