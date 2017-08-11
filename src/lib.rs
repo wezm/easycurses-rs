@@ -420,14 +420,16 @@ impl EasyCurses {
 
     /// Moves the virtual cursor to the row and column specified, relative to
     /// the top left ("notepad" space). Does not move the terminal's dispayed
-    /// cursor (if any) until `refresh` is also called.
+    /// cursor (if any) until `refresh` is also called. Out of bounds locations
+    /// cause this command to be ingored.
     pub fn move_rc(&mut self, row: i32, col: i32) -> bool {
         to_bool(self.win.mv(row, col))
     }
 
     /// Moves the virtual cursor to the x and y specified, relative to the
     /// bottom left ("cartesian" space). Does not move the terminal's displayed
-    /// cursor (if any) until `refresh` is also called.
+    /// cursor (if any) until `refresh` is also called. Out of bounds locations
+    /// cause this command to be ingored.
     pub fn move_xy(&mut self, x: i32, y: i32) -> bool {
         let row_count = self.win.get_max_y();
         to_bool(self.win.mv(row_count - (y + 1), x))
