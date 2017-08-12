@@ -225,12 +225,10 @@ pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
     });
     result.map_err(|e| match e.downcast_ref::<&str>() {
         Some(andstr) => Some(andstr.to_string()),
-        None => {
-            match e.downcast_ref::<String>() {
-                Some(string) => Some(string.to_string()),
-                None => None,
-            }
-        }
+        None => match e.downcast_ref::<String>() {
+            Some(string) => Some(string.to_string()),
+            None => None,
+        },
     })
 }
 
@@ -450,8 +448,8 @@ impl EasyCurses {
     }
 
     /// Prints the given string into the window.
-    pub fn print(&mut self, string: &str) -> bool {
-        to_bool(self.win.printw(string))
+    pub fn print<S: AsRef<str>>(&mut self, asref: S) -> bool {
+        asref.as_ref().chars().all(|c| self.print_char(c))
     }
 
     /// Prints the given character into the window.
