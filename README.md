@@ -1,4 +1,4 @@
-[![Crates](https://img.shields.io/crates/v/easycurses.svg)](https://crates.io/crates/easycurses) ![Travis-ci](https://travis-ci.org/Lokathor/easycurses-rs.svg)
+[![Crates](https://img.shields.io/crates/v/easycurses.svg)](https://crates.io/crates/easycurses) [![Travis-ci](https://travis-ci.org/Lokathor/easycurses-rs.svg)](https://travis-ci.org/Lokathor/easycurses-rs)
 
 # EasyCurses
 
