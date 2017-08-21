@@ -1,4 +1,4 @@
-[![Crates](https://img.shields.io/crates/v/easycurses.svg)](https://crates.io/crates/easycurses)
+[![Crates](https://img.shields.io/crates/v/easycurses.svg)](https://crates.io/crates/easycurses) ![Travis-ci](https://travis-ci.org/Lokathor/easycurses-rs.svg)
 
 # EasyCurses
 
@@ -6,7 +6,7 @@ A rust crate to smooth over the pain points of working with curses. Because it's
 based on [pancurses](https://github.com/ihalila/pancurses), it works equally
 well with on both windows and unix computers.
 
-Examples are available in the `examples/` directory. The files are throughly
+Examples are available in the `examples/` directory. The files are somewhat
 commented, and you can run any of them with `cargo` to see them in action.
 
 ```
