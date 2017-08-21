@@ -423,6 +423,7 @@ impl EasyCurses {
     /// ```rust
     /// let mut easy = easycurses::EasyCurses::initialize_system();
     /// let (row_count,col_count) = easy.get_row_col_count();
+    /// // using RC coordinates.
     /// for row in 0..row_count {
     ///     for col in 0..col_count {
     ///         easy.move_rc(row,col);
@@ -430,6 +431,15 @@ impl EasyCurses {
     ///         assert!(actual_row == row && actual_col == col);
     ///     }
     /// }
+    /// // using XY coordinates.
+    /// for y in 0..row_count {
+    ///     for x in 0..col_count {
+    ///         easy.move_xy(x,y);
+    ///         let (actual_x,actual_y) = easy.get_cursor_xy();
+    ///         assert!(actual_x == x && actual_y == y);
+    ///     }
+    /// }
+    /// ```
     pub fn get_row_col_count(&mut self) -> (i32, i32) {
         self.win.get_max_yx()
     }
