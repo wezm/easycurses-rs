@@ -13,7 +13,7 @@ commented, and you can run any of them with `cargo` to see them in action.
 cargo run --example <fileName>
 ```
 
-## [Documentation](https://docs.rs/easycurses)
+Full API documentation available at [docs.rs/easycurses](https://docs.rs/easycurses)
 
 ## Terminal Safety
 

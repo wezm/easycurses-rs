@@ -9,6 +9,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 fn main() {
+    // Normal setup
     let mut easy = EasyCurses::initialize_system();
     easy.set_cursor_visibility(CursorVisibility::Invisible);
     easy.set_echo(false);
@@ -16,11 +17,16 @@ fn main() {
     easy.set_input_mode(InputMode::NonBlocking);
     easy.set_scrolling(true);
 
+    // We need to know how wide our screen is.
     let (_, col_count) = easy.get_row_col_count();
-    let frame_target_duration = Duration::new(1, 0).checked_div(60).expect(
-        "failed when rhs!=0, what?",
-    );
 
+    // sadly we can't make this const since it has to unwrap and all that, but
+    // really this should be a const.
+    let frame_target_duration = Duration::new(1, 0)
+        .checked_div(60)
+        .expect("failed when rhs!=0, what?");
+
+    // We start at an arbitrary position.
     let mut position = 5;
     loop {
         let top_of_loop = Instant::now();
