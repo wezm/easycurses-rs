@@ -242,7 +242,8 @@ pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
 ///
 /// Except in the case of [`is_color_terminal`], all `EasyCurses` methods that
 /// return a `bool` use it to indicate if the requested operation was successful
-/// or not.
+/// or not. Unfortunately, the curses library doesn't provide any more info than
+/// that, so a `bool` is all you get.
 ///
 /// [`is_color_terminal`]: #method.is_color_terminal
 #[derive(Debug)]
@@ -447,8 +448,14 @@ impl EasyCurses {
         to_bool(self.win.setscrreg(top, bottom))
     }
 
-    /// Prints the given string into the window.
+    /// Prints the given string-like value into the window by printing each
+    /// individual character into the window. If there is any error encountered
+    /// upon printing a character, that cancels the printing of the rest of the
+    /// characters.
     pub fn print<S: AsRef<str>>(&mut self, asref: S) -> bool {
+        // Note: If we manually iterate the characters and then print them one
+        // by one, it saves us from making the CString allocation that pancurses
+        // would make as it attempts to pass the string data down to curses.
         asref.as_ref().chars().all(|c| self.print_char(c))
     }
 
