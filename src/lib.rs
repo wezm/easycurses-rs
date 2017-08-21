@@ -54,7 +54,7 @@ impl Default for CursorVisibility {
 ///
 /// Curses supports eight different colors. Each character cell has one "color
 /// pair" set which is a foreground and background pairing. Note that a cell can
-/// also be "bold", which might display as differnet colors on some terminals.
+/// also be "bold", which might display as different colors on some terminals.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Color {
     #[allow(missing_docs)]
