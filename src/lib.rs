@@ -45,6 +45,12 @@ pub enum CursorVisibility {
 }
 
 impl Default for CursorVisibility {
+    /// The default `CursorVisibility` is `Visible`.
+    ///
+    /// ```
+    /// use easycurses::CursorVisibility;
+    /// assert_eq!(CursorVisibility::default(), CursorVisibility::Visible);
+    /// ```
     fn default() -> Self {
         CursorVisibility::Visible
     }
@@ -170,6 +176,39 @@ impl Default for ColorPair {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+/// The input modes allowed.
+///
+/// Affects how [`EasyCurses::get_input`] works. Set a mode with
+/// [`EasyCurses::set_input_mode`].
+///
+/// [`EasyCurses::get_input`]: struct.EasyCurses.html#method.get_input
+///
+/// [`EasyCurses::set_input_mode`]: struct.EasyCurses.html#method.set_input_mode
+pub enum InputMode {
+    /// `get_input` will block indefinitely. This is the default.
+    Blocking,
+    /// `get_input` will return immediately. If no input is in the queue you get
+    /// a `None` value back.
+    NonBlocking,
+    /// `get_input` will wait up to the number of milliseconds specified before
+    /// returning `None`. If any value less than 1 is given, it uses 1 instead.
+    TimeLimit(i32),
+}
+
+impl Default for InputMode {
+    /// The default input mode is Blocking.
+    ///
+    /// ```rust
+    /// use easycurses::InputMode;
+    /// assert_eq!(InputMode::default(), InputMode::Blocking);
+    /// ```
+    fn default() -> Self {
+        InputMode::Blocking
+    }
+}
+
+
 /// The "low level" conversion using i16 values. Color pair 0 is white on
 /// black but we can't assign to it. Technically we're only assured to have
 /// color pairs 0 through 63 available, but you usually get more so we're
@@ -191,38 +230,6 @@ fn to_bool(curses_bool: i32) -> bool {
     } else {
         false
     }
-}
-
-/// Wraps the use of curses with `catch_unwind` to preserve panic info.
-///
-/// Normally, if your program panics while in curses mode the panic message
-/// prints immediately and then is destroyed before you can see it by the
-/// automatic cleanup of curses mode. Instead, this runs the function you pass
-/// it within `catch_unwind` and when there's a panic it catches the panic value
-/// and attempts to downcast it into a `String` you can print out or log or
-/// whatever you like. Since a panic value can be anything at all this won't
-/// always succeed, thus the `Option` wrapper on the `Err` case. Regardless of
-/// what of `Result` you get back, curses mode will be fully cleaned up and shut
-/// down by the time this function returns.
-///
-/// Note that you *don't* have to use this if you just want your terminal
-/// restored to normal when your progam panics while in curses mode. That is
-/// handled automatically by the `Drop` implementation of `EasyCurses`. You only
-/// need to use this if you care about the panic message itself.
-pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
-    user_function: F,
-) -> Result<R, Option<String>> {
-    let result = catch_unwind(|| {
-        let mut easy = EasyCurses::initialize_system();
-        user_function(&mut easy)
-    });
-    result.map_err(|e| match e.downcast_ref::<&str>() {
-        Some(andstr) => Some(andstr.to_string()),
-        None => match e.downcast_ref::<String>() {
-            Some(string) => Some(string.to_string()),
-            None => None,
-        },
-    })
 }
 
 /// This is a handle to all your fun curses functionality.
@@ -405,7 +412,24 @@ impl EasyCurses {
         })
     }
 
-    /// Returns the number of rows and columns available in the window.
+    /// Returns the number of rows and columns available in the window. Each of
+    /// these are the number of locations in that dimension, but the rows and
+    /// cols (as well as the Xs and Ys if you care to use that coordinate space)
+    /// use 0-based indexing, so the actual addressable locations are numbered 0
+    /// to N-1, similar to with slices, `.len()`, and indexing. Fortunately, the
+    /// normal rust Range type already handles this for us. If you wanted to
+    /// iterate every cell of the window you'd probably use a loop like this:
+    ///
+    /// ```rust
+    /// let mut easy = easycurses::EasyCurses::initialize_system();
+    /// let (row_count,col_count) = easy.get_row_col_count();
+    /// for row in 0..row_count {
+    ///     for col in 0..col_count {
+    ///         easy.move_rc(row,col);
+    ///         let (actual_row,actual_col) = easy.get_cursor_rc();
+    ///         assert!(actual_row == row && actual_col == col);
+    ///     }
+    /// }
     pub fn get_row_col_count(&mut self) -> (i32, i32) {
         self.win.get_max_yx()
     }
@@ -418,6 +442,12 @@ impl EasyCurses {
         to_bool(self.win.mv(row, col))
     }
 
+    /// Obtains the cursor's current position using `(R,C)` coordinates
+    /// relateive to the top left corner.
+    pub fn get_cursor_rc(&self) -> (i32, i32) {
+        self.win.get_cur_yx()
+    }
+
     /// Moves the virtual cursor to the x and y specified, relative to the
     /// bottom left ("cartesian" space). Does not move the terminal's displayed
     /// cursor (if any) until `refresh` is also called. Out of bounds locations
@@ -425,6 +455,14 @@ impl EasyCurses {
     pub fn move_xy(&mut self, x: i32, y: i32) -> bool {
         let row_count = self.win.get_max_y();
         to_bool(self.win.mv(row_count - (y + 1), x))
+    }
+
+    /// Obtains the cursor's current position using `(X,Y)` coordinates relative
+    /// to the bottom right corner.
+    pub fn get_cursor_xy(&self) -> (i32, i32) {
+        let row_count = self.win.get_max_y();
+        let (row, col) = self.win.get_cur_yx();
+        (col, row_count - (row + 1))
     }
 
     /// When scrolling is enabled, any attempt to move off the bottom margin
@@ -436,7 +474,12 @@ impl EasyCurses {
         to_bool(self.win.scrollok(scrolling))
     }
 
-    /// Sets the top and bottom margins of the scrolling region.
+    /// Sets the top and bottom margins of the scrolling region. The inputs
+    /// should be the line numbers (relative to the top of the screen) for the
+    /// borders. Either border can be 0.
+    ///
+    /// See also:
+    /// [setscrreg](http://pubs.opengroup.org/onlinepubs/7908799/xcurses/setscrreg.html)
     pub fn set_scroll_region(&mut self, top: i32, bottom: i32) -> bool {
         to_bool(self.win.setscrreg(top, bottom))
     }
@@ -529,29 +572,34 @@ impl EasyCurses {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-/// The input modes allowed.
+/// Wraps the use of curses with `catch_unwind` to preserve panic info.
 ///
-/// Affects how [`EasyCurses::get_input`] works. Set a mode with
-/// [`EasyCurses::set_input_mode`].
+/// Normally, if your program panics while in curses mode the panic message
+/// prints immediately and then is destroyed before you can see it by the
+/// automatic cleanup of curses mode. Instead, this runs the function you pass
+/// it within `catch_unwind` and when there's a panic it catches the panic value
+/// and attempts to downcast it into a `String` you can print out or log or
+/// whatever you like. Since a panic value can be anything at all this won't
+/// always succeed, thus the `Option` wrapper on the `Err` case. Regardless of
+/// what of `Result` you get back, curses mode will be fully cleaned up and shut
+/// down by the time this function returns.
 ///
-/// [`EasyCurses::get_input`]: struct.EasyCurses.html#method.get_input
-///
-/// [`EasyCurses::set_input_mode`]: struct.EasyCurses.html#method.set_input_mode
-pub enum InputMode {
-    /// `get_input` will block indefinitely. This is the default.
-    Blocking,
-    /// `get_input` will return immediately. If no input is in the queue you get
-    /// a `None` value back.
-    NonBlocking,
-    /// `get_input` will wait up to the number of milliseconds specified before
-    /// returning `None`. If any value less than 1 is given, it uses 1 instead.
-    TimeLimit(i32),
-}
-
-impl Default for InputMode {
-    /// The default input mode is Blocking.
-    fn default() -> Self {
-        InputMode::Blocking
-    }
+/// Note that you *don't* have to use this if you just want your terminal
+/// restored to normal when your progam panics while in curses mode. That is
+/// handled automatically by the `Drop` implementation of `EasyCurses`. You only
+/// need to use this if you care about the panic message itself.
+pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
+    user_function: F,
+) -> Result<R, Option<String>> {
+    let result = catch_unwind(|| {
+        let mut easy = EasyCurses::initialize_system();
+        user_function(&mut easy)
+    });
+    result.map_err(|e| match e.downcast_ref::<&str>() {
+        Some(andstr) => Some(andstr.to_string()),
+        None => match e.downcast_ref::<String>() {
+            Some(string) => Some(string.to_string()),
+            None => None,
+        },
+    })
 }
