@@ -19,12 +19,12 @@ fn main() {
 
     // A message using RC coordinates.
     easy.move_rc(0, 0);
-    assert!(easy.get_cursor_rc() == (0, 0));
+    assert_eq!(easy.get_cursor_rc(), (0, 0));
     easy.print("Hello from RC 0,0.");
 
     // A message using XY coordiantes.
     easy.move_xy(1, 1);
-    assert!(easy.get_cursor_xy() == (1, 1));
+    assert_eq!(easy.get_cursor_xy(), (1, 1));
     easy.print("Hello from XY 1,1.");
 
     // Upper right corner has a '+'
