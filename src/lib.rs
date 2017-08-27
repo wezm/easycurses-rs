@@ -225,11 +225,7 @@ fn fgbg_pairid(fg: i16, bg: i16) -> i16 {
 /// Converts a `pancurses::OK` value into `true`, and all other values into
 /// `false`.
 fn to_bool(curses_bool: i32) -> bool {
-    if curses_bool == pancurses::OK {
-        true
-    } else {
-        false
-    }
+    curses_bool == pancurses::OK
 }
 
 /// This is a handle to all your fun curses functionality.
