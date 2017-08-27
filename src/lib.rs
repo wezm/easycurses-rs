@@ -377,7 +377,7 @@ impl EasyCurses {
     // TODO: pancurses::resize_term?
 
     /// Checks if the current terminal supports the use of colors.
-    pub fn is_color_terminal(&mut self) -> bool {
+    pub fn is_color_terminal(&self) -> bool {
         self.color_support
     }
 
