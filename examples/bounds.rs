@@ -9,7 +9,7 @@ use easycurses::*;
 
 fn main() {
     // Common startup
-    let mut easy = EasyCurses::initialize_system();
+    let mut easy = EasyCurses::initialize_system().unwrap();
     easy.set_cursor_visibility(CursorVisibility::Invisible);
     easy.set_echo(false);
     easy.set_keypad_enabled(true);

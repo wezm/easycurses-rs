@@ -1,4 +1,3 @@
-
 extern crate easycurses;
 
 use easycurses::*;
@@ -10,7 +9,7 @@ use std::time::Instant;
 
 fn main() {
     // Normal setup
-    let mut easy = EasyCurses::initialize_system();
+    let mut easy = EasyCurses::initialize_system().unwrap();
     easy.set_cursor_visibility(CursorVisibility::Invisible);
     easy.set_echo(false);
     easy.set_keypad_enabled(true);

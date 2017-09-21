@@ -9,7 +9,7 @@ use easycurses::*;
 
 fn main() {
     // Initialize the system
-    let mut easy = EasyCurses::initialize_system();
+    let mut easy = EasyCurses::initialize_system().unwrap();
 
     // don't show the cursor
     easy.set_cursor_visibility(CursorVisibility::Invisible);

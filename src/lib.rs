@@ -28,6 +28,12 @@ pub use pancurses::Input;
 
 use std::panic::*;
 use std::iter::Iterator;
+use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
+use std::error::Error;
+use std::fmt::{Display, Formatter};
+
+#[allow(non_upper_case_globals)]
+static curses_is_on: AtomicBool = ATOMIC_BOOL_INIT;
 
 /// The three options you can pass to [`EasyCurses::set_cursor_visibility`].
 ///
@@ -62,7 +68,7 @@ impl Default for CursorVisibility {
 /// pair" set which is a foreground and background pairing. Note that a cell can
 /// also be "bold", which might display as different colors on some terminals.
 #[allow(missing_docs)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum Color {
     Black,
     Red,
@@ -152,7 +158,7 @@ mod color_tests {
 /// Use them with [`EasyCurses::set_color_pair`].
 ///
 /// [`EasyCurses::set_color_pair`]: struct.EasyCurses.html#method.set_color_pair
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct ColorPair(i16);
 
 impl ColorPair {
@@ -228,6 +234,22 @@ fn to_bool(curses_bool: i32) -> bool {
     curses_bool == pancurses::OK
 }
 
+/// The error you get if you try to turn on curses while it's already on.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+pub struct CursesDoubleInit;
+
+impl Display for CursesDoubleInit {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), std::fmt::Error> {
+        write!(f, "CursesDoubleInit")
+    }
+}
+
+impl Error for CursesDoubleInit {
+    fn description(&self) -> &str {
+        "You tried to initialize curses while it was already on"
+    }
+}
+
 /// This is a handle to all your fun curses functionality.
 ///
 /// `EasyCurses` will automatically restore the terminal when you drop it, so
@@ -262,54 +284,60 @@ impl Drop for EasyCurses {
     /// curses function to be called.
     fn drop(&mut self) {
         pancurses::endwin();
+        curses_is_on.store(false, Ordering::SeqCst);
     }
 }
 
 impl EasyCurses {
-    /// Initializes the curses system so that you can begin using curses. This
-    /// isn't called "new" because you shouldn't be making more than one
-    /// EasyCurses value at the same time ever.
+    /// Initializes the curses system so that you can begin using curses. The
+    /// name is long to remind you of the seriousness of attempting to turn on
+    /// curses: If the C layer encounters an error while trying to initialize
+    /// the user's terminal into curses mode it will "helpfully" print an error
+    /// message and exit the process on its own.
     ///
     /// If the terminal supports colors, they are automatcially activated and
     /// color pairs are initialized for all color foreground and background
     /// combinations.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Since this uses the
-    /// [initscr](http://pubs.opengroup.org/onlinepubs/7908799/xcurses/initscr.html)
-    /// curses function, any error during initialization will generally cause
-    /// the program to print an error message to stdout and then immediately
-    /// exit. C libs are silly like that. Your terminal _will_ be left in a
-    /// usable state, but anything else in your program that's not abort-safe is
-    /// probably not fullly safe with this. It is expected that you deal with
-    /// that by calling this just once at the start of your program, before
-    /// you've started anything that's not abort-safe.
-    pub fn initialize_system() -> Self {
-        let w = pancurses::initscr();
-        let color_support = if pancurses::has_colors() {
-            to_bool(pancurses::start_color())
-        } else {
-            false
-        };
-        if color_support {
-            let color_count = pancurses::COLORS();
-            let pair_count = pancurses::COLOR_PAIRS();
-            for fg in Color::color_iterator() {
-                for bg in Color::color_iterator() {
-                    let fgi = color_to_i16(fg);
-                    let bgi = color_to_i16(bg);
-                    let pair_id = fgbg_pairid(fgi, bgi);
-                    assert!(fgi <= color_count as i16);
-                    assert!(bgi <= color_count as i16);
-                    assert!(pair_id <= pair_count as i16);
-                    pancurses::init_pair(pair_id, fgi, bgi);
+    /// Curses must not be double-initialized. This is tracked by easycurses
+    /// with an atomic bool being flipped on and off. If the bool is on when you
+    /// call this method you get the error. There's
+    pub fn initialize_system() -> Result<Self, CursesDoubleInit> {
+        // https://doc.rust-lang.org/std/sync/atomic/struct.AtomicBool.html#method.compare_and_swap
+        // This method call is goofy as hell but basically we try to turn
+        // `curses_is_on` to true and then we're told if we actually changed it
+        // or not. If we did that means it was off and it's safe to turn it on.
+        // If we didn't change it that means it was already on and we should
+        if !curses_is_on.compare_and_swap(false, true, Ordering::SeqCst) {
+            let w = pancurses::initscr();
+            let color_support = if pancurses::has_colors() {
+                to_bool(pancurses::start_color())
+            } else {
+                false
+            };
+            if color_support {
+                let color_count = pancurses::COLORS();
+                let pair_count = pancurses::COLOR_PAIRS();
+                for fg in Color::color_iterator() {
+                    for bg in Color::color_iterator() {
+                        let fgi = color_to_i16(fg);
+                        let bgi = color_to_i16(bg);
+                        let pair_id = fgbg_pairid(fgi, bgi);
+                        assert!(fgi <= color_count as i16);
+                        assert!(bgi <= color_count as i16);
+                        assert!(pair_id <= pair_count as i16);
+                        pancurses::init_pair(pair_id, fgi, bgi);
+                    }
                 }
             }
-        }
-        EasyCurses {
-            win: w,
-            color_support: color_support,
+            Ok(EasyCurses {
+                win: w,
+                color_support: color_support,
+            })
+        } else {
+            Err(CursesDoubleInit)
         }
     }
 
@@ -417,7 +445,7 @@ impl EasyCurses {
     /// iterate every cell of the window you'd probably use a loop like this:
     ///
     /// ```rust
-    /// let mut easy = easycurses::EasyCurses::initialize_system();
+    /// let mut easy = easycurses::EasyCurses::initialize_system().unwrap();
     /// let (row_count,col_count) = easy.get_row_col_count();
     /// // using RC coordinates.
     /// for row in 0..row_count {
@@ -504,6 +532,13 @@ impl EasyCurses {
     /// Prints the given character into the window.
     pub fn print_char(&mut self, character: char) -> bool {
         to_bool(self.win.addch(character))
+    }
+
+    /// Inserts the character desired at the current location, pushing the
+    /// current character at that location (and all after it on the same line)
+    /// one cell to the right.
+    pub fn insert_char(&mut self, character: char) -> bool {
+        to_bool(self.win.insch(character))
     }
 
     /// Deletes the character under the cursor. Characters after it on same the
@@ -598,7 +633,9 @@ pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
     user_function: F,
 ) -> Result<R, Option<String>> {
     let result = catch_unwind(|| {
-        let mut easy = EasyCurses::initialize_system();
+        // Normally calling `expect` is asking for eventual trouble to bite us,
+        // but we're specifically inside a `catch_windind` block so it's fine.
+        let mut easy = EasyCurses::initialize_system().expect("Curses double-initialization.");
         user_function(&mut easy)
     });
     result.map_err(|e| match e.downcast_ref::<&str>() {
