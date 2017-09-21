@@ -50,7 +50,7 @@ so no matter what this crate won't actaully go to 1.0 before `pancurses` does.
 
 ## License
 
-This project is released into the public domain vis [The
+This project is released into the public domain via [The
 Unlicense](https://unlicense.org). You are free to use it however you like with
 or without attribution. If you wish to contribute to the project then you must
 add your contributions under the same license.
