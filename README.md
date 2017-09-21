@@ -1,4 +1,6 @@
-[![Crates](https://img.shields.io/crates/v/easycurses.svg)](https://crates.io/crates/easycurses) [![Travis-ci](https://travis-ci.org/Lokathor/easycurses-rs.svg)](https://travis-ci.org/Lokathor/easycurses-rs)
+[![License:Unlicense](https://img.shields.io/badge/License-Unlicense-blue.svg)](https://unlicense.org)
+[![CratesIO](https://img.shields.io/crates/v/easycurses.svg)](https://crates.io/crates/easycurses)
+[![Travis-ci](https://travis-ci.org/Lokathor/easycurses-rs.svg)](https://travis-ci.org/Lokathor/easycurses-rs)
 
 # EasyCurses
 
@@ -40,27 +42,15 @@ scope somewhere within your call stack.
 
 ## Stability
 
-I would characterize the library as largely stable. It's missing at least one
-feature that I'd like to see added (insert_char) but that's because pancurses
-itself lacks that at the moment.
-
-As laid out somewhere during the [1.0-level crate
+I would characterize the library as "largely stable". As laid out somewhere
+during the [1.0-level crate
 discussions](https://github.com/rust-lang/rust-roadmap/issues/11), a crate can't
 rightly call itself 1.0 unless all the things it depends on are themselves 1.0,
 so no matter what this crate won't actaully go to 1.0 before `pancurses` does.
 
 ## License
 
-This project uses Rust's standard Apache/MIT dual-license scheme. In other
-words, you can use it under either of
-
-* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE.txt) or http://www.apache.org/licenses/LICENSE-2.0)
-* MIT license ([LICENSE-MIT](LICENSE-MIT.txt) or http://opensource.org/licenses/MIT)
-
-at your option.
-
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
-dual licensed as above, without any additional terms or conditions.
+This project is released into the public domain vis [The
+Unlicense](https://unlicense.org). You are free to use it however you like with
+or without attribution. If you wish to contribute to the project then you must
+add your contributions under the same license.
