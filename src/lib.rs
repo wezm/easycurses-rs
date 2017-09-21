@@ -280,7 +280,7 @@ impl EasyCurses {
     ///
     /// Curses must not be double-initialized. This is tracked by easycurses
     /// with an atomic bool being flipped on and off. If the bool is on when you
-    /// call this method you get the error. There's only one error, and
+    /// call this method you get nothing back.
     pub fn initialize_system() -> Option<Self> {
         // https://doc.rust-lang.org/std/sync/atomic/struct.AtomicBool.html#method.compare_and_swap
         // This method call is goofy as hell but basically we try to turn
