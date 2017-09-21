@@ -4,23 +4,19 @@
 #![deny(missing_debug_implementations)]
 
 //! This is a crate that allows one to easily use a basic form of curses. It is
-//! based upon [pancurses](https://docs.rs/crate/pancurses/0.8.0) and so it's
-//! cross platform between windows and unix. It exposes a simplified view of
-//! curses functionality where there's just one Window and all of your actions
-//! are called upon a single struct type, `EasyCurses`. This ensures that curses
+//! based upon [pancurses](https://docs.rs/crate/pancurses) and so it's cross
+//! platform between windows and unix. It exposes a simplified view of curses
+//! functionality where there's just one Window and all of your actions are
+//! called upon a single struct type, `EasyCurses`. This ensures that curses
 //! functions are only called while curses is initialized, and also that curses
 //! is always cleaned up at the end (via `Drop`).
 //!
-//! You should _never_ make a second `EasyCurses` value without having ensured
-//! that the first one is already dropped. Initialization and shutdown of curses
-//! will get out of balance and your terminal will probably be left in a very
-//! unusable state.
-//!
-//! Similarly, the library can only perform proper automatic cleanup if Rust is
-//! allowed to run the `Drop` implementation. This happens normally, and during
-//! an unwinding pancic, but if you ever abort the program (either because you
+//! The library can only perform proper automatic cleanup if Rust is allowed to
+//! run the `Drop` implementation. This happens during normal usage, and during
+//! an unwinding panic, but if you ever abort the program (either because you
 //! compiled with `panic=abort` or because you panic during an unwind) you lose
-//! the cleanup safety. So, don't do that.
+//! the cleanup safety. That is why this library specifies `panic="unwind"` for
+//! all build modes, and you should too.
 
 extern crate pancurses;
 
@@ -29,8 +25,6 @@ pub use pancurses::Input;
 use std::panic::*;
 use std::iter::Iterator;
 use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
-use std::error::Error;
-use std::fmt::{Display, Formatter};
 
 #[allow(non_upper_case_globals)]
 static curses_is_on: AtomicBool = ATOMIC_BOOL_INIT;
@@ -215,15 +209,14 @@ impl Default for InputMode {
 }
 
 
-/// The "low level" conversion using i16 values. Color pair 0 is white on
-/// black but we can't assign to it. Technically we're only assured to have
-/// color pairs 0 through 63 available, but you usually get more so we're
-/// taking a gamble that there's at least one additional bit available. The
-/// alternative is a somewhat complicated conversion scheme where we special
-/// case White/Black to be 0, then other things start ascending above that,
-/// until we hit where White/Black should be and start subtracting one from
-/// everything to keep it within spec. I don't wanna do that if I don't
-/// really have to.
+/// The "low level" conversion using i16 values. Color pair 0 is white on black
+/// but we can't assign to it. Technically we're only assured to have color
+/// pairs 0 through 63 available, but you _usually_ get more so we're taking a
+/// gamble that there's at least one additional bit available. The alternative
+/// is a somewhat complicated conversion scheme where we special case
+/// White/Black to be 0, then other things start ascending above that, until we
+/// hit where White/Black should be and start subtracting one from everything to
+/// keep it within spec. I don't wanna do that if I don't really have to.
 fn fgbg_pairid(fg: i16, bg: i16) -> i16 {
     1 + (8 * fg + bg)
 }
@@ -232,22 +225,6 @@ fn fgbg_pairid(fg: i16, bg: i16) -> i16 {
 /// `false`.
 fn to_bool(curses_bool: i32) -> bool {
     curses_bool == pancurses::OK
-}
-
-/// The error you get if you try to turn on curses while it's already on.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-pub struct CursesDoubleInit;
-
-impl Display for CursesDoubleInit {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), std::fmt::Error> {
-        write!(f, "CursesDoubleInit")
-    }
-}
-
-impl Error for CursesDoubleInit {
-    fn description(&self) -> &str {
-        "You tried to initialize curses while it was already on"
-    }
 }
 
 /// This is a handle to all your fun curses functionality.
@@ -303,8 +280,8 @@ impl EasyCurses {
     ///
     /// Curses must not be double-initialized. This is tracked by easycurses
     /// with an atomic bool being flipped on and off. If the bool is on when you
-    /// call this method you get the error. There's
-    pub fn initialize_system() -> Result<Self, CursesDoubleInit> {
+    /// call this method you get the error. There's only one error, and
+    pub fn initialize_system() -> Option<Self> {
         // https://doc.rust-lang.org/std/sync/atomic/struct.AtomicBool.html#method.compare_and_swap
         // This method call is goofy as hell but basically we try to turn
         // `curses_is_on` to true and then we're told if we actually changed it
@@ -332,12 +309,12 @@ impl EasyCurses {
                     }
                 }
             }
-            Ok(EasyCurses {
+            Some(EasyCurses {
                 win: w,
                 color_support: color_support,
             })
         } else {
-            Err(CursesDoubleInit)
+            None
         }
     }
 
