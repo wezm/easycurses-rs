@@ -34,7 +34,7 @@ static curses_is_on: AtomicBool = ATOMIC_BOOL_INIT;
 /// Note that not all terminals support all visibility modes.
 ///
 /// [`EasyCurses::set_cursor_visibility`]: struct.EasyCurses.html#method.set_cursor_visibility
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 pub enum CursorVisibility {
     /// Makes the cursor invisible. Supported on most terminals.
     Invisible,
