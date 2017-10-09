@@ -260,27 +260,34 @@ impl Drop for EasyCurses {
     /// [endwin](http://pubs.opengroup.org/onlinepubs/7908799/xcurses/endwin.html)
     /// curses function to be called.
     fn drop(&mut self) {
+        // We will assume that the initialization code is correctly never
+        // initializing curses twice, and thus we will assume that it's safe to
+        // call endwin and then store that curses is off once that's done. If we
+        // were paranoid we'd do another compare_and_swap, but that's slower for
+        // no reason (again, assuming that the initialization code is correct).
         pancurses::endwin();
         curses_is_on.store(false, Ordering::SeqCst);
     }
 }
 
 impl EasyCurses {
-    /// Initializes the curses system so that you can begin using curses. The
-    /// name is long to remind you of the seriousness of attempting to turn on
-    /// curses: If the C layer encounters an error while trying to initialize
+    /// Initializes the curses system so that you can begin using curses.
+    ///
+    /// The name is long to remind you of the seriousness of attempting to turn
+    /// on curses: If the C layer encounters an error while trying to initialize
     /// the user's terminal into curses mode it will "helpfully" print an error
-    /// message and exit the process on its own.
+    /// message and exit the process on its own. There's no way to prevent this
+    /// from happening at the Rust level.
     ///
     /// If the terminal supports colors, they are automatcially activated and
-    /// color pairs are initialized for all color foreground and background
-    /// combinations.
+    /// `ColorPair` values are initialized for all color foreground and
+    /// background combinations.
     ///
     /// # Errors
     ///
     /// Curses must not be double-initialized. This is tracked by easycurses
     /// with an atomic bool being flipped on and off. If the bool is on when you
-    /// call this method you get nothing back.
+    /// call this method you get `None` back instead.
     pub fn initialize_system() -> Option<Self> {
         // https://doc.rust-lang.org/std/sync/atomic/struct.AtomicBool.html#method.compare_and_swap
         // This method call is goofy as hell but basically we try to turn
