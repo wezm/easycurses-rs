@@ -279,7 +279,7 @@ impl EasyCurses {
     /// message and exit the process on its own. There's no way to prevent this
     /// from happening at the Rust level.
     ///
-    /// If the terminal supports colors, they are automatcially activated and
+    /// If the terminal supports colors, they are automatically activated and
     /// `ColorPair` values are initialized for all color foreground and
     /// background combinations.
     ///
@@ -453,15 +453,15 @@ impl EasyCurses {
     }
 
     /// Moves the virtual cursor to the row and column specified, relative to
-    /// the top left ("notepad" space). Does not move the terminal's dispayed
+    /// the top left ("notepad" space). Does not move the terminal's displayed
     /// cursor (if any) until `refresh` is also called. Out of bounds locations
-    /// cause this command to be ingored.
+    /// cause this command to be ignored.
     pub fn move_rc(&mut self, row: i32, col: i32) -> bool {
         to_bool(self.win.mv(row, col))
     }
 
     /// Obtains the cursor's current position using `(R,C)` coordinates
-    /// relateive to the top left corner.
+    /// relative to the top left corner.
     pub fn get_cursor_rc(&self) -> (i32, i32) {
         self.win.get_cur_yx()
     }
@@ -469,7 +469,7 @@ impl EasyCurses {
     /// Moves the virtual cursor to the x and y specified, relative to the
     /// bottom left ("cartesian" space). Does not move the terminal's displayed
     /// cursor (if any) until `refresh` is also called. Out of bounds locations
-    /// cause this command to be ingored.
+    /// cause this command to be ignored.
     pub fn move_xy(&mut self, x: i32, y: i32) -> bool {
         let row_count = self.win.get_max_y();
         to_bool(self.win.mv(row_count - (y + 1), x))
@@ -485,7 +485,7 @@ impl EasyCurses {
 
     /// When scrolling is enabled, any attempt to move off the bottom margin
     /// will cause lines within the scrolling region to scroll up one line. If a
-    /// scrolling region is set but scolling is not enabled then attempts to go
+    /// scrolling region is set but scrolling is not enabled then attempts to go
     /// off the bottom will just print nothing instead. Use `set_scroll_region`
     /// to control the size of the scrolling region.
     pub fn set_scrolling(&mut self, scrolling: bool) -> bool {
@@ -610,7 +610,7 @@ impl EasyCurses {
 /// down by the time this function returns.
 ///
 /// Note that you *don't* have to use this if you just want your terminal
-/// restored to normal when your progam panics while in curses mode. That is
+/// restored to normal when your program panics while in curses mode. That is
 /// handled automatically by the `Drop` implementation of `EasyCurses`. You only
 /// need to use this if you care about the panic message itself.
 pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
@@ -618,7 +618,7 @@ pub fn preserve_panic_message<F: FnOnce(&mut EasyCurses) -> R + UnwindSafe, R>(
 ) -> Result<R, Option<String>> {
     let result = catch_unwind(|| {
         // Normally calling `expect` is asking for eventual trouble to bite us,
-        // but we're specifically inside a `catch_windind` block so it's fine.
+        // but we're specifically inside a `catch_unwind` block so it's fine.
         let mut easy = EasyCurses::initialize_system().expect("Curses double-initialization.");
         user_function(&mut easy)
     });

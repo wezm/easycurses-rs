@@ -20,7 +20,7 @@ Full API documentation available at [docs.rs/easycurses](https://docs.rs/easycur
 ## Terminal Safety
 
 Normally when you're using curses there's a big danger that your program will
-leave the terminal in an unsable state where things don't print properly and
+leave the terminal in an unusable state where things don't print properly and
 stuff if your program exits on accident and you don't get your chance to call
 `endwin` properly. EasyCurses will safely cleanup the terminal and restore it to
 a useable state when your program closes via its `Drop` trait. No worries.
@@ -46,11 +46,11 @@ I would characterize the library as "largely stable". As laid out somewhere
 during the [1.0-level crate
 discussions](https://github.com/rust-lang/rust-roadmap/issues/11), a crate can't
 rightly call itself 1.0 unless all the things it depends on are themselves 1.0,
-so no matter what this crate won't actaully go to 1.0 before `pancurses` does.
+so no matter what this crate won't actually go to 1.0 before `pancurses` does.
 
 ## License
 
 This project is released into the public domain via [The
 Unlicense](https://unlicense.org). You are free to use it however you like with
 or without attribution. If you wish to contribute to the project then you must
-add your contributions under the same license.
+add your contributions under the same license. 
