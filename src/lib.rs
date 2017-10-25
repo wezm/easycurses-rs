@@ -476,7 +476,7 @@ impl EasyCurses {
     }
 
     /// Obtains the cursor's current position using `(X,Y)` coordinates relative
-    /// to the bottom right corner.
+    /// to the bottom left corner.
     pub fn get_cursor_xy(&self) -> (i32, i32) {
         let row_count = self.win.get_max_y();
         let (row, col) = self.win.get_cur_yx();

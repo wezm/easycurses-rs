@@ -27,11 +27,8 @@ a useable state when your program closes via its `Drop` trait. No worries.
 
 The catch is that you do have to only _ever_ have one `EasyCurses` value active
 at once. Having two at once would let the initialization and shutdown get out of
-balance, and things would go bad. Currently there's nothing enforcing this at
-all, but in the future there might be a way to enforce this without burdening
-the users of the library. Note that it is safe to drop `EasyCurses` entirely
-(shutting down curses in the process) and then make a new one (starting a fresh
-new curses session).
+balance, and things would go bad. This is tracked with an AtomicBool value
+that's flipped on and off as appropriate.
 
 Similarly, if you ever abort the program entirely there's no chance for cleanup,
 since an abort is an instant termination of the process. So, just don't ever
