@@ -1,6 +1,5 @@
 
 #![warn(missing_docs)]
-#![allow(dead_code)]
 #![deny(missing_debug_implementations)]
 
 //! This is a crate that allows one to easily use a basic form of curses. It is
@@ -103,6 +102,7 @@ fn color_to_i16(color: Color) -> i16 {
 
 /// Converts an `i16` to the `Color` associated with it. Fails if the input is
 /// outside the range 0 to 7 (inclusive).
+#[cfg(test)]
 fn i16_to_color(val: i16) -> Option<Color> {
     use Color::*;
     match val {
@@ -286,8 +286,8 @@ impl EasyCurses {
     /// # Errors
     ///
     /// Curses must not be double-initialized. This is tracked by easycurses
-    /// with an atomic bool being flipped on and off. If the bool is on when you
-    /// call this method you get `None` back instead.
+    /// with an `AtomicBool` being flipped on and off. If it is on when you call
+    /// this method you get `None` back instead.
     pub fn initialize_system() -> Option<Self> {
         // https://doc.rust-lang.org/std/sync/atomic/struct.AtomicBool.html#method.compare_and_swap
         // This method call is goofy as hell but basically we try to turn
@@ -411,7 +411,7 @@ impl EasyCurses {
         })
     }
 
-    /// Enables or disables unerlined text for all future input.
+    /// Enables or disables underlined text for all future input.
     pub fn set_underline(&mut self, underline_on: bool) -> bool {
         to_bool(if underline_on {
             self.win.attron(pancurses::Attribute::Underline)
