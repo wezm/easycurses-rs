@@ -578,7 +578,8 @@ impl EasyCurses {
         };
     }
 
-    /// Gets an `Input` from the curses input buffer. Depending on the `timeout` setting that y
+    /// Gets an `Input` from the curses input buffer. This will block or not
+    /// according to the input mode, see `set_input_mode`.
     pub fn get_input(&mut self) -> Option<pancurses::Input> {
         self.win.getch()
     }
