@@ -1,5 +1,5 @@
 
-// Prevents a spare console from being created attatched to our program on
+// Prevents a spare console from being created attached to our program on
 // windows, but only if we're running in release mode.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -22,7 +22,7 @@ fn main() {
     assert_eq!(easy.get_cursor_rc(), (0, 0));
     easy.print("Hello from RC 0,0.");
 
-    // A message using XY coordiantes.
+    // A message using XY coordinates.
     easy.move_xy(1, 1);
     assert_eq!(easy.get_cursor_xy(), (1, 1));
     easy.print("Hello from XY 1,1.");
