@@ -19,8 +19,9 @@ fn main() {
     // We need to know how wide our screen is.
     let (_, col_count) = easy.get_row_col_count();
 
-    // sadly we can't make this const since it has to unwrap and all that, but
-    // really this should be a const.
+    // Sadly we can't make this const since it has to unwrap and all that, but
+    // ideally this could be a const. You could use lazy_static I guess if you
+    // really cared, but it's not a huge deal.
     let frame_target_duration = Duration::new(1, 0)
         .checked_div(60)
         .expect("failed when rhs!=0, what?");
