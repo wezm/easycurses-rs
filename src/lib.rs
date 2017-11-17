@@ -539,6 +539,13 @@ impl EasyCurses {
     }
 
     /// Clears the entire screen.
+    ///
+    /// **Note:** This function can cause flickering of the output with PDCurses
+    /// if you're clearing the screen and then immediately writing to the whole
+    /// screen before you end up calling `refresh`. The exact location of the
+    /// flickering effect seems to vary from machine to machine. If you intend
+    /// to simply replace the whole window with new content, just overwrite the
+    /// previous values without calling `clear` and things will be fine.
     pub fn clear(&mut self) -> bool {
         to_bool(self.win.clear())
     }
