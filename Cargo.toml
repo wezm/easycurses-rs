@@ -1,6 +1,6 @@
 [package]
 name = "easycurses"
-version = "0.7.3"
+version = "0.8"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/easycurses-rs"
 readme = "README.md"
@@ -9,7 +9,7 @@ description = "A crate that makes working with curses easy."
 license = "Unlicense"
 
 [dependencies]
-pancurses = "0.11"
+pancurses = "0.12"
 
 [lib]
 name = "easycurses"
