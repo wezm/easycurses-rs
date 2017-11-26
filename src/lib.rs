@@ -176,7 +176,6 @@ impl Default for ColorPair {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 /// The input modes allowed.
 ///
 /// Affects how [`EasyCurses::get_input`] works. Set a mode with
@@ -185,6 +184,7 @@ impl Default for ColorPair {
 /// [`EasyCurses::get_input`]: struct.EasyCurses.html#method.get_input
 ///
 /// [`EasyCurses::set_input_mode`]: struct.EasyCurses.html#method.set_input_mode
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum InputMode {
     /// `get_input` will block indefinitely. This is the default.
     Blocking,
