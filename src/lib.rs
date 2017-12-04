@@ -21,8 +21,8 @@ extern crate pancurses;
 
 pub use pancurses::Input;
 
-use std::panic::*;
 use std::iter::Iterator;
+use std::panic::*;
 use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
 
 #[allow(non_upper_case_globals)]
@@ -250,9 +250,14 @@ pub struct EasyCurses {
     /// call something that's not here. Under normal circumstances you shouldn't
     /// need to touch this field at all. It's not "unsafe" to use in the
     /// rust/memory sense, but if you access this field and then cause a bug in
-    /// `EasyCurses`, that's your fault.
+    /// `EasyCurses`, well that's your own fault.
     pub win: pancurses::Window,
     color_support: bool,
+    /// Determines if the window will automatically resize itself when
+    /// `KeyResize` comes in through the input channel. Defaults to true. If you
+    /// disable this and then don't call resize yourself then `KeyResize` comes
+    /// in you'll have a bad time.
+    pub auto_resize: bool,
 }
 
 impl Drop for EasyCurses {
@@ -319,6 +324,7 @@ impl EasyCurses {
             Some(EasyCurses {
                 win: w,
                 color_support: color_support,
+                auto_resize: true,
             })
         } else {
             None
@@ -586,9 +592,21 @@ impl EasyCurses {
     }
 
     /// Gets an `Input` from the curses input buffer. This will block or not
-    /// according to the input mode, see `set_input_mode`.
+    /// according to the input mode, see `set_input_mode`. If `KeyResize` is
+    /// seen and `auto_resize` is enabled then the window will automatically
+    /// update its size for you. In that case, `KeyResize` is still passed to
+    /// you so that you can change anything else that might need to be updated.
     pub fn get_input(&mut self) -> Option<pancurses::Input> {
-        self.win.getch()
+        let ret = self.win.getch();
+        if self.auto_resize {
+            match ret {
+                Some(Input::KeyResize) => {
+                    self.resize(0, 0);
+                }
+                _ => (),
+            };
+        }
+        ret
     }
 
     /// Discards all type-ahead that has been input by the user but not yet read
@@ -602,6 +620,15 @@ impl EasyCurses {
     /// was successful.
     pub fn un_get_input(&mut self, input: &pancurses::Input) -> bool {
         to_bool(self.win.ungetch(input))
+    }
+
+    /// Sets the window to use the number of lines and columns specified. If you
+    /// pass zero for both then this will make the window's data structures
+    /// attempt to match the current size of the window. This is done
+    /// automatically for you when `KeyResize` comes in through the input
+    /// buffer.
+    pub fn resize(&mut self, new_lines: i32, new_cols: i32) -> bool {
+        to_bool(pancurses::resize_term(new_lines, new_cols))
     }
 }
 

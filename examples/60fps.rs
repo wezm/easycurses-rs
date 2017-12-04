@@ -17,7 +17,7 @@ fn main() {
     easy.set_scrolling(true);
 
     // We need to know how wide our screen is.
-    let (_, col_count) = easy.get_row_col_count();
+    let (_, mut col_count) = easy.get_row_col_count();
 
     // Sadly we can't make this const since it has to unwrap and all that, but
     // ideally this could be a const. You could use lazy_static I guess if you
@@ -35,7 +35,12 @@ fn main() {
             match input {
                 Input::KeyLeft => position = max(0, position - 1),
                 Input::KeyRight => position = min(col_count - 1, position + 1),
-                _ => (),
+                Input::KeyResize => {
+                    let (_, new_col_count) = easy.get_row_col_count();
+                    col_count = new_col_count;
+                    position = min(col_count - 1, position);
+                }
+                other => println!("Unknown: {:?}", other),
             }
         }
         // Compute what we'll display.
