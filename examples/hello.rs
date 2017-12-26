@@ -3,9 +3,13 @@
 // windows, but only if we're running in release mode.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+// Enabling macro_use allows the `colorpair!` macro, though you can also use
+// `ColorPair::new(Color,Color)` if you don't want the macro.
+#[macro_use]
 extern crate easycurses;
 
 use easycurses::*;
+use easycurses::Color::*;
 
 fn main() {
     // Initialize the system
@@ -16,6 +20,9 @@ fn main() {
 
     // don't echo the user's input
     easy.set_echo(false);
+
+    // we'll print this in green text.
+    easy.set_color_pair(colorpair!(Green on Black));
 
     // Print this string from the current position. The default cursor position
     // is rc(0,0)

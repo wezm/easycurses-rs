@@ -36,8 +36,7 @@ fn main() {
                 Input::KeyLeft => position = max(0, position - 1),
                 Input::KeyRight => position = min(col_count - 1, position + 1),
                 Input::KeyResize => {
-                    let (_, new_col_count) = easy.get_row_col_count();
-                    col_count = new_col_count;
+                    col_count = easy.get_row_col_count().1;
                     position = min(col_count - 1, position);
                 }
                 other => println!("Unknown: {:?}", other),

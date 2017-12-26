@@ -25,6 +25,27 @@ use std::iter::Iterator;
 use std::panic::*;
 use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
 
+/// A handy macro to make describing color pairs read more like normal english.
+///
+/// ```rust
+/// #[macro_use]
+/// extern crate easycurses;
+/// use easycurses::{Color, ColorPair};
+/// use easycurses::Color::*;
+///
+/// fn main() {
+///     for fg in Color::color_iterator() {
+///         for bg in Color::color_iterator() {
+///             assert_eq!(ColorPair::new(fg,bg), colorpair!(fg on bg));
+///         }
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! colorpair {
+    ($fg:ident on $bg:ident) => (ColorPair::new($fg,$bg));
+}
+
 #[allow(non_upper_case_globals)]
 static curses_is_on: AtomicBool = ATOMIC_BOOL_INIT;
 
@@ -160,7 +181,19 @@ impl ColorPair {
     pub fn new(fg: Color, bg: Color) -> Self {
         let fgi = color_to_i16(fg);
         let bgi = color_to_i16(bg);
-        ColorPair(fgbg_pairid(fgi, bgi))
+        ColorPair(ColorPair::fgbg_pairid(fgi, bgi))
+    }
+
+    /// The "low level" conversion using i16 values. Color pair 0 is white on black
+    /// but we can't assign to it. Technically we're only assured to have color
+    /// pairs 0 through 63 available, but you _usually_ get more so we're taking a
+    /// gamble that there's at least one additional bit available. The alternative
+    /// is a somewhat complicated conversion scheme where we special case
+    /// White/Black to be 0, then other things start ascending above that, until we
+    /// hit where White/Black should be and start subtracting one from everything to
+    /// keep it within spec. I don't wanna do that if I don't really have to.
+    fn fgbg_pairid(fg: i16, bg: i16) -> i16 {
+        1 + (8 * fg + bg)
     }
 }
 
@@ -206,19 +239,6 @@ impl Default for InputMode {
     fn default() -> Self {
         InputMode::Blocking
     }
-}
-
-
-/// The "low level" conversion using i16 values. Color pair 0 is white on black
-/// but we can't assign to it. Technically we're only assured to have color
-/// pairs 0 through 63 available, but you _usually_ get more so we're taking a
-/// gamble that there's at least one additional bit available. The alternative
-/// is a somewhat complicated conversion scheme where we special case
-/// White/Black to be 0, then other things start ascending above that, until we
-/// hit where White/Black should be and start subtracting one from everything to
-/// keep it within spec. I don't wanna do that if I don't really have to.
-fn fgbg_pairid(fg: i16, bg: i16) -> i16 {
-    1 + (8 * fg + bg)
 }
 
 /// Converts a `pancurses::OK` value into `true`, and all other values into
@@ -314,10 +334,29 @@ impl EasyCurses {
                     for bg in Color::color_iterator() {
                         let fgi = color_to_i16(fg);
                         let bgi = color_to_i16(bg);
-                        let pair_id = fgbg_pairid(fgi, bgi);
-                        assert!(fgi <= color_count as i16);
-                        assert!(bgi <= color_count as i16);
-                        assert!(pair_id <= pair_count as i16);
+                        let pair_id = ColorPair::fgbg_pairid(fgi, bgi);
+                        debug_assert!(
+                            fgi <= color_count as i16,
+                            "Curses reported {} color ids available, but {:?} has id {}",
+                            color_count,
+                            fg,
+                            fgi
+                        );
+                        debug_assert!(
+                            bgi <= color_count as i16,
+                            "Curses reported {} color ids available, but {:?} has id {}",
+                            color_count,
+                            bg,
+                            bgi
+                        );
+                        debug_assert!(
+                            pair_id <= pair_count as i16,
+                            "Curses reported {} colorpair ids available, but {:?} on {:?} would be id {}",
+                            pair_count,
+                            fg,
+                            bg,
+                            pair_id
+                        );
                         pancurses::init_pair(pair_id, fgi, bgi);
                     }
                 }
