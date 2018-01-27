@@ -1,9 +1,9 @@
 environment:
   matrix:
-  - TARGET: stable-x86_64-pc-windows-msvc
-  - TARGET: stable-i686-pc-windows-msvc
-  - TARGET: stable-x86_64-pc-windows-gnu
-  - TARGET: stable-i686-pc-windows-gnu
+  - TARGET: 1.20-x86_64-pc-windows-msvc
+  - TARGET: 1.20-i686-pc-windows-msvc
+  - TARGET: 1.20-x86_64-pc-windows-gnu
+  - TARGET: 1.20-i686-pc-windows-gnu
   - TARGET: beta-x86_64-pc-windows-msvc
   - TARGET: beta-i686-pc-windows-msvc
   - TARGET: beta-x86_64-pc-windows-gnu
