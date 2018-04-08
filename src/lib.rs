@@ -699,8 +699,8 @@ impl EasyCurses {
   /// Pushes an `Input` value into the input stack so that it will be returned
   /// by the next call to `get_input`. The return value is if the operation
   /// was successful.
-  pub fn un_get_input(&mut self, input: &pancurses::Input) -> bool {
-    to_bool(self.win.ungetch(input))
+  pub fn un_get_input<I: AsRef<pancurses::Input>>(&mut self, input: I) -> bool {
+    to_bool(self.win.ungetch(input.as_ref()))
   }
 
   /// Sets the window to use the number of lines and columns specified. If you
