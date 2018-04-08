@@ -2,8 +2,8 @@
 # Not sure if PDCurses works with that build target at all.
 environment:
   matrix:
-  - TARGET: 1.20.0-x86_64-pc-windows-msvc
-  - TARGET: 1.20.0-i686-pc-windows-msvc
+  - TARGET: 1.21.0-x86_64-pc-windows-msvc
+  - TARGET: 1.21.0-i686-pc-windows-msvc
 #  - TARGET: 1.20.0-x86_64-pc-windows-gnu
 #  - TARGET: 1.20.0-i686-pc-windows-gnu
   - TARGET: beta-x86_64-pc-windows-msvc
