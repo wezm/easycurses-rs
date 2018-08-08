@@ -14,6 +14,7 @@ fn main() {
   easy.set_echo(false);
   easy.set_keypad_enabled(true);
   easy.set_input_mode(InputMode::Character);
+  easy.set_input_timeout(TimeoutMode::Immediate);
   easy.set_scrolling(true);
 
   // We need to know how wide our screen is.
