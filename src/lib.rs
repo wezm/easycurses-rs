@@ -530,7 +530,7 @@ impl EasyCurses {
   ///     }
   /// }
   /// ```
-  pub fn get_row_col_count(&mut self) -> (i32, i32) {
+  pub fn get_row_col_count(&self) -> (i32, i32) {
     self.win.get_max_yx()
   }
 
