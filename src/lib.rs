@@ -19,6 +19,8 @@
 
 extern crate pancurses;
 
+pub mod constants;
+
 pub use pancurses::Input;
 
 use std::iter::Iterator;
@@ -604,7 +606,7 @@ impl EasyCurses {
   }
 
   /// Prints the given character into the window.
-  pub fn print_char(&mut self, character: char) -> bool {
+  pub fn print_char<T: ToChtype>(&mut self, character: T) -> bool {
     to_bool(self.win.addch(character))
   }
 
