@@ -19,11 +19,15 @@
 
 extern crate pancurses;
 
+pub mod constants;
+
 pub use pancurses::Input;
 
 use std::iter::Iterator;
 use std::panic::*;
 use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
+
+use pancurses::ToChtype;
 
 /// A handy macro to make describing color pairs read more like normal english.
 ///
@@ -602,14 +606,14 @@ impl EasyCurses {
   }
 
   /// Prints the given character into the window.
-  pub fn print_char(&mut self, character: char) -> bool {
+  pub fn print_char<T: ToChtype>(&mut self, character: T) -> bool {
     to_bool(self.win.addch(character))
   }
 
   /// Inserts the character desired at the current location, pushing the
   /// current character at that location (and all after it on the same line)
   /// one cell to the right.
-  pub fn insert_char(&mut self, character: char) -> bool {
+  pub fn insert_char<T: ToChtype>(&mut self, character: T) -> bool {
     to_bool(self.win.insch(character))
   }
 
