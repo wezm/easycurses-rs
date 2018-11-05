@@ -1,12 +1,12 @@
 [package]
 name = "easycurses"
-version = "0.12.0"
+version = "0.12.1"
 authors = ["Lokathor <zefria@gmail.com>"]
 repository = "https://github.com/Lokathor/easycurses-rs"
 readme = "README.md"
 keywords = ["curses", "tui"]
 description = "A crate that makes working with curses easy."
-license = "CC0-1.0"
+license = "0BSD"
 
 [dependencies]
 pancurses = "0.16"

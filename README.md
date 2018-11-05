@@ -1,4 +1,4 @@
-[![License:Unlicense](https://img.shields.io/badge/License-Unlicense-blue.svg)](https://unlicense.org)
+[![License:0BSD](https://img.shields.io/badge/License-0BSD-brightgreen.svg)](https://opensource.org/licenses/FPL-1.0.0)
 [![CratesIO](https://img.shields.io/crates/v/easycurses.svg)](https://crates.io/crates/easycurses)
 [![Travis-ci](https://travis-ci.org/Lokathor/easycurses-rs.svg)](https://travis-ci.org/Lokathor/easycurses-rs)
 [![Appveyor](https://ci.appveyor.com/api/projects/status/ywxse6ejshe39g1v?svg=true)](https://ci.appveyor.com/project/Lokathor/easycurses-rs)
