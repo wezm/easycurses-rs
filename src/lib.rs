@@ -342,31 +342,28 @@ impl EasyCurses {
       if color_support {
         let color_count = pancurses::COLORS();
         let pair_count = pancurses::COLOR_PAIRS();
-        // Note(Lokathor): On some systems you can apparently have color be
-        // reported as allowed but then still not have enough colors and/or
-        // pairs available. This attempts to guard against that.
         if color_count >= 8 && pair_count >= 8 * 8 {
           for fg in Color::color_iterator() {
             for bg in Color::color_iterator() {
-              let fgi = color_to_i16(fg);
-              let bgi = color_to_i16(bg);
-              let pair_id = ColorPair::fgbg_pairid(fgi, bgi);
+              let fgi: i16 = color_to_i16(fg);
+              let bgi: i16 = color_to_i16(bg);
+              let pair_id: i16 = ColorPair::fgbg_pairid(fgi, bgi);
               debug_assert!(
-                fgi <= color_count as i16,
+                fgi as i32 <= color_count,
                 "Curses reported {} color ids available, but {:?} has id {}",
                 color_count,
                 fg,
                 fgi
               );
               debug_assert!(
-                bgi <= color_count as i16,
+                bgi as i32 <= color_count,
                 "Curses reported {} color ids available, but {:?} has id {}",
                 color_count,
                 bg,
                 bgi
               );
               debug_assert!(
-                pair_id <= pair_count as i16,
+                pair_id as i32 <= pair_count,
                 "Curses reported {} colorpair ids available, but {:?} on {:?} would be id {}",
                 pair_count,
                 fg,
