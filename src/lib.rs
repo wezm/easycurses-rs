@@ -499,6 +499,15 @@ impl EasyCurses {
     })
   }
 
+  /// Enables or disables italic text for all future input.
+  pub fn set_italic(&mut self, italic_on: bool) -> bool {
+    to_bool(if italic_on {
+      self.win.attron(pancurses::Attribute::Italic)
+    } else {
+      self.win.attroff(pancurses::Attribute::Italic)
+    })
+  }
+
   /// Enables or disables underlined text for all future input.
   pub fn set_underline(&mut self, underline_on: bool) -> bool {
     to_bool(if underline_on {
